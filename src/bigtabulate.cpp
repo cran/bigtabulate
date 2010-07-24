@@ -16,8 +16,6 @@
 #include <R.h>
 #include <Rdefines.h>
 
-#include <iostream>
-
 template<typename T>
 string ttos(T i)
 {
@@ -98,8 +96,8 @@ class IndexMapper : public Mapper<T>
     {
       _begin = pFirst;
       _end = pLast;
-      Mapper<T>::_size = distance(_begin, _end);
       _useNA = useNA;
+      Mapper<T>::_size = distance(_begin, _end);
     } 
 
     virtual int to_index( const T value ) const
@@ -129,8 +127,9 @@ class BreakMapper : public Mapper<T>
       _breakWidth = _width / (numBreaks-1);
       _totalBreaks= numBreaks-1;
       _naIndex = static_cast<index_type>(_totalBreaks+1);
-      Mapper<T>::_size = static_cast<std::size_t>(_totalBreaks) + 
+      Mapper<T>::_size = static_cast<std::size_t>(_totalBreaks) +
         static_cast<std::size_t>(_useNA);
+
     }
 
     virtual int to_index( const T value ) const
@@ -184,7 +183,6 @@ std::vector<ValueType> get_unique( const InputIter itStart,
   bool naAdded=false;
   NAMaker<ValueType> make_na;
   Values v;
-  bool valueAdded=false;
   if (itStart == itEnd)
     return v;
   for (it = itStart; it != itEnd; ++it)
@@ -199,20 +197,12 @@ std::vector<ValueType> get_unique( const InputIter itStart,
     }
     else
     {
-      if (!valueAdded)
+      typename Values::iterator cit = std::lower_bound( v.begin(), 
+        v.end()- static_cast<std::size_t>(naAdded), *it );
+      // If we can't find it, we need to add it.
+      if (cit == v.end() || *cit != *it) 
       {
-        v.insert(v.begin(), *it);
-        valueAdded=true;
-      }
-      else
-      {
-        typename Values::iterator cit = std::lower_bound( v.begin(), 
-          v.end()- static_cast<std::size_t>(naAdded), *it );
-        // If we can't find it, we need to add it.
-        if (*cit != *it) 
-        {
-          v.insert(cit, *it);
-        }
+        v.insert(cit, *it);
       }
     }
   }
@@ -361,9 +351,19 @@ strings interact( const strings &s1, SEXP s2 )
   k=0;
   for (i=0; i < s1.size(); ++i)
   {
-    for (j=0; j < static_cast<size_t>(GET_LENGTH(s2)); ++j)
+    if (isInteger(s2))
     {
-      ret[k++] = ttos(NUMERIC_DATA(s2)[j]) + ":" + s1[i];
+      for (j=0; j < static_cast<size_t>(GET_LENGTH(s2)); ++j)
+      {
+        ret[k++] = ttos(INTEGER_DATA(s2)[j]) + ":" + s1[i];
+      }
+    }
+    else
+    {
+      for (j=0; j < static_cast<size_t>(GET_LENGTH(s2)); ++j)
+      {
+        ret[k++] = ttos(NUMERIC_DATA(s2)[j]) + ":" + s1[i];
+      }
     }
   }
   return ret;
@@ -394,7 +394,6 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
   {
     groupNames = interact( groupNames, VECTOR_ELT(uniqueGroups, i) );
   }
-
   std::map<std::string, int> lmi;
   i=0;
   lmi["levels"] = i++;
@@ -428,6 +427,8 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
   // Create the data structures that map values to indices for each of the
   // columns.
   std::vector<bool> isBreakMapper(GET_LENGTH(uniqueGroups), false);
+  accMult.resize(GET_LENGTH(uniqueGroups));
+  int lastVecLen=0;
   for (i=0; i < GET_LENGTH(uniqueGroups); ++i)
   {
     SEXP vec = VECTOR_ELT(uniqueGroups, i);
@@ -447,10 +448,14 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
     }
     totalListSize = (totalListSize == 0 ? vecLen : totalListSize*vecLen);
     if (i==0)
-      accMult.push_back( vecLen );
+    {
+      accMult[i] = 1;
+      lastVecLen = vecLen;
+    }
     else
     {
-      accMult.push_back( mappers[i]->size() * accMult[i-1]);
+      accMult[i] = accMult[i-1] * lastVecLen;
+      lastVecLen = vecLen;
     }
   }
   typedef std::vector<double> Indices;
@@ -469,7 +474,7 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
   
   typedef std::vector<index_type> ProcessColumns;
   ProcessColumns procCols;
- 
+
   if ( splitcol != NULL_USER_OBJECT || LOGICAL_VALUE(returnSummary) )
   {
     if ( isna(NUMERIC_VALUE(splitcol)) || LOGICAL_VALUE(returnSummary) )
@@ -497,7 +502,6 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
       TableSummaries(totalListSize, TableSummary(6, 0.)) );
   }
   // Get the indices for each of the column-value combinations.
-
   for (i=0; i < m.nrow(); ++i)
   {
     int tableIndex=0;
@@ -511,12 +515,14 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
         tableIndex = -1;
         break;
       }
-      tableIndex += accMult[j-1] * mapperVal;
+      tableIndex += accMult[j] * mapperVal;
     }
     mapperVal = mappers[0]->to_index( static_cast<RType>(
         (m[static_cast<index_type>(NUMERIC_DATA(columns)[0]-1)][i])) );
     if (tableIndex == -1 || mapperVal == -1)
+    {
       continue;
+    }
     tableIndex += mapperVal;
     if ( splitcol != NULL_USER_OBJECT || LOGICAL_VALUE(returnSummary) )
     {
@@ -588,7 +594,7 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
         for (i=0; i < static_cast<index_type>(tis.size()); ++i)
         {
           Indices &ind = tis[i];
-          vec = NEW_NUMERIC(tis[i].size());
+          vec = NEW_NUMERIC(ind.size());
           std::copy( ind.begin(), ind.end(), NUMERIC_DATA(vec) );
           SET_VECTOR_ELT( mapRet, i, vec );
         }
