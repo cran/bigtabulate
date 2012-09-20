@@ -1,8 +1,3 @@
-#include "bigmemory/BigMatrix.h"
-#include "bigmemory/MatrixAccessor.hpp"
-#include "bigmemory/isna.hpp"
-#include "bigmemory/util.h"
-
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -12,6 +7,11 @@
 #include <sstream>
 
 #include <math.h>
+
+#include "bigmemory/BigMatrix.h"
+#include "bigmemory/MatrixAccessor.hpp"
+#include "bigmemory/isna.hpp"
+#include "bigmemory/util.h"
 
 #include <R.h>
 #include <Rdefines.h>
