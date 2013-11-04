@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include <utility>
 #include <vector>
 #include <algorithm>
@@ -5,8 +7,6 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <sstream>
-
-#include <math.h>
 
 #include "bigmemory/BigMatrix.h"
 #include "bigmemory/MatrixAccessor.hpp"
