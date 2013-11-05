@@ -1,12 +1,11 @@
 0f65d0619d134619231153512a829cd0 *COPYING
-4d14f8931eb4aa76018c9449146c1e14 *DESCRIPTION
-2a64da2d0998db8e1de924a3fe85ab62 *LICENSE
+4a6c4285fed7fd3601102d8243bb3775 *DESCRIPTION
 1665e7429a4347c18d49f175275458d3 *NAMESPACE
 57aea77d381dabbf8d9d2ebe6bb524af *R/bigtabulate.R
 00eea5e1466ce72609c3e174d9f05944 *R/zzz.R
 f284adffb9d2facf62b23da5af033ba2 *configure
 da964c42bf1a78b7bd1d54e092138a6e *configure.win
-641e7ab8ab7f60da9bb7098283331124 *man/bigtabulate-package.Rd
+f602c9cb01ba063f8cf47768e92e9952 *man/bigtabulate-package.Rd
 57f52d85540cf60a118910d8b7938b8e *man/bigtabulate.Rd
-32adb5b7b9e415d2ba66c7bcf7b99b45 *src/Makevars
-dfaf2be4238108b53df369a7f09d8613 *src/bigtabulate.cpp
+228e388d0009e5dd5a59978a83f8eac7 *src/Makevars
+00964cd026428dad984ecf65b15998ea *src/bigtabulate.cpp
