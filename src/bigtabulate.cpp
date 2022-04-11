@@ -337,7 +337,7 @@ std::string MakeIndexLevelName( MatrixAccessorType &m,
 }
 
 template<typename T>
-struct zero_size : public std::unary_function<T, bool>
+struct zero_size 
 {
   bool operator()( const T &vec ) const {return vec.size() == 0;}
 };
@@ -672,7 +672,8 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
     {
       SEXP mn = Rf_protect(Rf_allocVector(STRSXP, m.nrow()));
       ++protectCount;
-      mapRet = Rf_allocVector(REALSXP,m.nrow());
+      mapRet = Rf_protect(Rf_allocVector(REALSXP,m.nrow()));
+      ++protectCount;
       double *pmr = REAL(mapRet);
       for (i=0; i < static_cast<index_type>(tis.size()); ++i)
       {
@@ -680,7 +681,8 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
         for (j=0; j < static_cast<index_type>(inds.size()); ++j)
         {
           SET_STRING_ELT(mn, static_cast<int>(inds[j]-1), 
-            Rf_mkChar(groupNames[i].c_str()));
+            Rf_protect(Rf_mkChar(groupNames[i].c_str())));
+          ++protectCount;
           pmr[static_cast<index_type>(inds[j])-1] = i+1;
         }
       }
@@ -710,7 +712,8 @@ SEXP TAPPLY( MatrixAccessorType m, SEXP columns, SEXP breakSexp,
     ++protectCount;
     for (i=0; i < Rf_length(summaryRet); ++i)
     {
-      SEXP dimnames = Rf_allocVector(VECSXP, 2);
+      SEXP dimnames = Rf_protect(Rf_allocVector(VECSXP, 2));
+      ++protectCount;
       SET_VECTOR_ELT(dimnames, 0, R_NilValue );
       SET_VECTOR_ELT(dimnames, 1, StringVec2RChar(colnames) );
       
